@@ -4,12 +4,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.Base64;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+
 import javax.ws.rs.core.Response;
-
-
 import org.json.simple.JSONObject;
 
 
@@ -20,8 +20,7 @@ public class AppCommunicator {
 	private String passwordBase64;
 	private String token;
 	private static String baseuri = "http://apps.transqual.pl/app-monitor/rest/login?";
-
-	
+	private static String endpointuri = "http://apps.transqual.pl/app-monitor/rest/services/endpoint/";
 
 	public AppCommunicator(String login, String password) {
 		super();
@@ -29,19 +28,19 @@ public class AppCommunicator {
 		this.password = password;
 		encodebase64();
 	}
-	private void encodebase64(){
+
+	private void encodebase64() {
 		try {
 			loginBase64 = Base64.getEncoder().encodeToString(login.getBytes("utf-8"));
 			passwordBase64 = Base64.getEncoder().encodeToString(password.getBytes("utf-8"));
-		   
+
 		} catch (UnsupportedEncodingException e) {
 
 			e.printStackTrace();
 		}
-	
 
 	}
-		
+
 	public JSONObject getAuthorization() {
 		JSONObject jsonResponse = null;
 
@@ -68,6 +67,27 @@ public class AppCommunicator {
 
 		}
 		return jsonResponse;
+
+	}
+
+	public JSONObject getListlog() {
+		// getAuthorization();
+		JSONObject jsonResponseLog = null;
+
+		Client client = ClientBuilder.newClient();
+		WebTarget target = client.target(endpointuri);
+		Invocation.Builder invocationBuilder = target.request(MediaType.TEXT_PLAIN_TYPE);
+		invocationBuilder.accept(MediaType.APPLICATION_JSON);
+		invocationBuilder.header("X-TQ-Token", "VGVzdEFwcDE.ZGU1YTA3YzZkMGY2NDczODBkMTM1YzQ3ZDU2MGIzNDI0OTg5MTViNg")
+				.header("X-TQ-ServiceParam", "ListLog").header("X-TQ-Name", "WT.Model.GetList");
+
+		
+
+		Response res = invocationBuilder.buildPost(Entity.json("")).invoke();
+
+		jsonResponseLog = res.readEntity(JSONObject.class);
+
+		return jsonResponseLog;
 
 	}
 

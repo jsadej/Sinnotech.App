@@ -22,25 +22,31 @@ import org.json.simple.JSONObject;
  */
 @Path("myresource")
 public class MyResource {
-
 	
+
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.TEXT_PLAIN })
+	@Produces({ MediaType.APPLICATION_JSON })
+	
+	//@Produces({ MediaType.TEXT_PLAIN })
 
 	public Response post() {
 		String login = "TestApp1";
 		String password = "letmein";
 
 		AppCommunicator app = new AppCommunicator(login, password);
-		JSONObject obj = app.getAuthorization();
-		String token = (String) obj.get("token");
+	    //JSONObject obj = app.getAuthorization();
+		//String token = (String) obj.get("token");
 		//System.out.println();
-
-		return Response.status(200).entity(token).build();
+	     
+		JSONObject objLog = app.getListlog();
+		//String log = (String) objLog.get("");
+	     
+		return Response.status(200).entity((objLog)).build();
 
 	}
 
+	
 }
 	
 
