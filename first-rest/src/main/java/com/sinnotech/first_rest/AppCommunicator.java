@@ -2,6 +2,8 @@ package com.sinnotech.first_rest;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
+import java.util.HashMap;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -19,6 +21,7 @@ public class AppCommunicator {
 	private String loginBase64;
 	private String passwordBase64;
 	private String token;
+	private JSONObject jsonResponse;
 	private static String baseuri = "http://apps.transqual.pl/app-monitor/rest/login?";
 	private static String endpointuri = "http://apps.transqual.pl/app-monitor/rest/services/endpoint/";
 
@@ -27,6 +30,7 @@ public class AppCommunicator {
 		this.login = login;
 		this.password = password;
 		encodebase64();
+
 	}
 
 	private void encodebase64() {
@@ -41,8 +45,12 @@ public class AppCommunicator {
 
 	}
 
+	public String parseJson() {
+		token = (String) jsonResponse.get("token");
+		return token;
+	}
+
 	public JSONObject getAuthorization() {
-		JSONObject jsonResponse = null;
 
 		try {
 
@@ -58,8 +66,7 @@ public class AppCommunicator {
 
 			jsonResponse = response.readEntity(JSONObject.class);
 
-			System.out.println(response.getStatus());
-			System.out.println(jsonResponse);
+			
 
 		} catch (Exception e) {
 
@@ -71,17 +78,15 @@ public class AppCommunicator {
 	}
 
 	public JSONObject getListlog() {
-		// getAuthorization();
+
 		JSONObject jsonResponseLog = null;
 
 		Client client = ClientBuilder.newClient();
 		WebTarget target = client.target(endpointuri);
 		Invocation.Builder invocationBuilder = target.request(MediaType.TEXT_PLAIN_TYPE);
 		invocationBuilder.accept(MediaType.APPLICATION_JSON);
-		invocationBuilder.header("X-TQ-Token", "VGVzdEFwcDE.ZGU1YTA3YzZkMGY2NDczODBkMTM1YzQ3ZDU2MGIzNDI0OTg5MTViNg")
-				.header("X-TQ-ServiceParam", "ListLog").header("X-TQ-Name", "WT.Model.GetList");
-
-		
+		invocationBuilder.header("X-TQ-Token", parseJson()).header("X-TQ-ServiceParam", "ListLog").header("X-TQ-Name",
+				"WT.Model.GetList");
 
 		Response res = invocationBuilder.buildPost(Entity.json("")).invoke();
 
