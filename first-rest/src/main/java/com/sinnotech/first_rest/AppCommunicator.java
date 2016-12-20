@@ -3,6 +3,7 @@ package com.sinnotech.first_rest;
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -14,6 +15,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.json.simple.JSONObject;
 
+import com.google.gson.Gson;
+
 
 public class AppCommunicator {
 	private String login;
@@ -21,12 +24,14 @@ public class AppCommunicator {
 	private String loginBase64;
 	private String passwordBase64;
 	private String token;
-	private JSONObject jsonResponse;
-	private static String baseuri = "http://apps.transqual.pl/app-monitor/rest/login?";
-	private static String endpointuri = "http://apps.transqual.pl/app-monitor/rest/services/endpoint/";
+	private Map<String, Object> logs;
 
-	public AppCommunicator(String login, String password) {
+	private String loginUri;
+	private static String endpointuri = "http://apps.sinnotech.pl/app-monitor/rest/services/endpoint/";
+
+	public AppCommunicator(String login, String password, String loginUri) {
 		super();
+		this.loginUri = loginUri;
 		this.login = login;
 		this.password = password;
 		encodebase64();
@@ -45,18 +50,13 @@ public class AppCommunicator {
 
 	}
 
-	public String parseJson() {
-		token = (String) jsonResponse.get("token");
-		return token;
-	}
-
-	public JSONObject getAuthorization() {
-
+	public String getAuthorization() {
+		JSONObject jsonResponse;
 		try {
 
 			Client client = ClientBuilder.newClient();
 
-			WebTarget LoginWebTarget = client.target(baseuri);
+			WebTarget LoginWebTarget = client.target(loginUri);
 			WebTarget LoginWebTargetWithQueryParam = LoginWebTarget.queryParam("l", loginBase64)
 					.queryParam("p", passwordBase64).queryParam("ln", "");
 
@@ -65,34 +65,42 @@ public class AppCommunicator {
 			Response response = invocationBuilder.accept(MediaType.APPLICATION_JSON).get();
 
 			jsonResponse = response.readEntity(JSONObject.class);
-
-			
+			token = (String) jsonResponse.get("token");
 
 		} catch (Exception e) {
 
 			e.printStackTrace();
 
 		}
-		return jsonResponse;
+		return token;
 
 	}
 
-	public JSONObject getListlog() {
+	
+	
+	public Map<String, Object> send(String endpointName, String endpointParam, Map<String, String> params) {
 
-		JSONObject jsonResponseLog = null;
+		getAuthorization();
 
+		JSONObject JsonResponse = null;
 		Client client = ClientBuilder.newClient();
+
 		WebTarget target = client.target(endpointuri);
 		Invocation.Builder invocationBuilder = target.request(MediaType.TEXT_PLAIN_TYPE);
 		invocationBuilder.accept(MediaType.APPLICATION_JSON);
-		invocationBuilder.header("X-TQ-Token", parseJson()).header("X-TQ-ServiceParam", "ListLog").header("X-TQ-Name",
-				"WT.Model.GetList");
+		invocationBuilder.header("X-TQ-Token", token).header("X-TQ-ServiceVersion", "1")
+				.header("X-TQ-ServiceParam", endpointParam).header("X-TQ-Name", endpointName);
 
 		Response res = invocationBuilder.buildPost(Entity.json("")).invoke();
 
-		jsonResponseLog = res.readEntity(JSONObject.class);
+		JsonResponse = res.readEntity(JSONObject.class);
+		String Response = JsonResponse.toJSONString();
 
-		return jsonResponseLog;
+		Gson gson = new Gson();
+		logs = new HashMap<String, Object>();
+		logs = (Map<String, Object>) gson.fromJson(Response, logs.getClass());
+
+		return logs;
 
 	}
 
